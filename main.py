@@ -118,6 +118,7 @@ class ModernButton(tk.Button):
     """Clean white-themed button with hover effect"""
     def __init__(self, parent, **kwargs):
         bg_color = kwargs.pop('bg_color', ACCENT)
+        hover_bg = kwargs.pop('hover_bg', "#357ABD" if bg_color == ACCENT else "#C0392B")  # <-- pindah ke atas
         super().__init__(
             parent,
             bg=bg_color,
@@ -130,7 +131,7 @@ class ModernButton(tk.Button):
             **kwargs
         )
         self.default_bg = bg_color
-        self.hover_bg = kwargs.pop('hover_bg', "#357ABD" if bg_color == ACCENT else "#C0392B")
+        self.hover_bg = hover_bg  # <-- pakai variabel yang udah di-pop
         self.bind("<Enter>", self._on_hover)
         self.bind("<Leave>", self._on_leave)
     
@@ -139,6 +140,7 @@ class ModernButton(tk.Button):
     
     def _on_leave(self, e):
         self.config(bg=self.default_bg)
+
 
 class ModernEntry(tk.Entry):
     """Clean entry field with border"""
@@ -161,7 +163,8 @@ class AlgorithmOrderDialog(tk.Toplevel):
     def __init__(self, parent):
         super().__init__(parent)
         self.title("Select Encryption Order")
-        self.geometry("500x600")
+        self.geometry("600x750")
+        self.minsize(600, 750)
         self.configure(bg=BG)
         self.resizable(False, False)
         
@@ -198,7 +201,7 @@ class AlgorithmOrderDialog(tk.Toplevel):
         
         # Main content
         content = tk.Frame(self, bg=BG)
-        content.pack(fill="both", expand=True, padx=20, pady=10)
+        content.pack(fill="both", expand=False, padx=20, pady=10)
         
         # Available algorithms
         tk.Label(
@@ -317,11 +320,10 @@ class AlgorithmOrderDialog(tk.Toplevel):
             justify="left"
         ).pack(anchor="w", pady=10)
         
-        # Buttons - THREE BUTTONS: Cancel, Save Order, Next
+        # Buttons - TWO BUTTONS: Cancel and Save Configuration
         btn_frame = tk.Frame(self, bg=BG)
-        btn_frame.pack(fill="x", padx=40, pady=(10, 20))
-        
-        # Cancel button (left)
+        btn_frame.pack(side="bottom", fill="x", padx=40, pady=(10, 20))
+
         cancel_btn = tk.Button(
             btn_frame,
             text="✖ Cancel",
@@ -336,47 +338,12 @@ class AlgorithmOrderDialog(tk.Toplevel):
             command=self._on_cancel
         )
         cancel_btn.pack(side="left")
-        
-        # Spacer
+
         tk.Frame(btn_frame, bg=BG).pack(side="left", expand=True)
-        
-        # Save Order button (middle-right)
-        def save_order():
-            if not self.selected_order:
-                messagebox.showwarning("No Selection", "Please select at least one algorithm first")
-                return
-            
-            order_str = " → ".join([a.upper() for a in self.selected_order])
-            messagebox.showinfo("Order Saved", f"Algorithm order saved:\n\n{order_str}\n\nClick 'Next' to enter encryption keys.")
-        
+
         save_btn = tk.Button(
             btn_frame,
-            text="💾 Save Order",
-            font=("Segoe UI", 10, "bold"),
-            bg="#9B59B6",  # Purple for save
-            fg="white",
-            relief="flat",
-            cursor="hand2",
-            padx=25,
-            pady=12,
-            command=save_order,
-            bd=0
-        )
-        save_btn.pack(side="right", padx=(10, 0))
-        
-        def save_hover(e):
-            save_btn.config(bg="#8E44AD")
-        
-        def save_leave(e):
-            save_btn.config(bg="#9B59B6")
-        
-        save_btn.bind("<Enter>", save_hover)
-        save_btn.bind("<Leave>", save_leave)
-        
-        # Next button (right)
-        next_btn = tk.Button(
-            btn_frame,
-            text="Next: Enter Keys →",
+            text="💾 Save Configuration",
             font=("Segoe UI", 10, "bold"),
             bg=ACCENT,
             fg="white",
@@ -387,17 +354,11 @@ class AlgorithmOrderDialog(tk.Toplevel):
             command=self._on_ok,
             bd=0
         )
-        next_btn.pack(side="right")
-        
-        def next_hover(e):
-            next_btn.config(bg="#357ABD")
-        
-        def next_leave(e):
-            next_btn.config(bg=ACCENT)
-        
-        next_btn.bind("<Enter>", next_hover)
-        next_btn.bind("<Leave>", next_leave)
-        
+        save_btn.pack(side="right")
+
+        save_btn.bind("<Enter>", lambda e: save_btn.config(bg="#357ABD"))
+        save_btn.bind("<Leave>", lambda e: save_btn.config(bg=ACCENT))
+
         self.order_listbox.bind('<<ListboxSelect>>', lambda e: self._update_move_buttons())
     
     def _update_order_buttons(self):
@@ -468,7 +429,7 @@ class KeysInputDialog(tk.Toplevel):
     def __init__(self, parent, algorithm_order):
         super().__init__(parent)
         self.title("Enter Encryption Keys")
-        self.geometry("500x500")
+        self.geometry("600x750")
         self.configure(bg=BG)
         self.resizable(False, False)
         
@@ -503,7 +464,7 @@ class KeysInputDialog(tk.Toplevel):
         
         # Keys form
         form_frame = tk.Frame(self, bg=BG)
-        form_frame.pack(fill="both", expand=True, padx=40, pady=20)
+        form_frame.pack(fill="x", expand=False, padx=40, pady=20)
         
         self.key_entries = {}
         
@@ -553,7 +514,7 @@ class KeysInputDialog(tk.Toplevel):
         
         # Buttons - TWO SEPARATE BUTTONS
         btn_frame = tk.Frame(self, bg=BG)
-        btn_frame.pack(fill="x", padx=40, pady=(10, 20))
+        btn_frame.pack(side="bottom", fill="x", padx=40, pady=(15, 25))
         
         # Cancel button
         cancel_btn = tk.Button(
@@ -570,16 +531,35 @@ class KeysInputDialog(tk.Toplevel):
             command=self._on_cancel
         )
         cancel_btn.pack(side="left")
-        
+
+        # Tombol Save Keys (baru ditambahkan)
+        save_btn = tk.Button(
+            btn_frame,
+            text="💾 Save Keys",
+            font=FONT_MAIN,
+            bg=ACCENT,
+            fg="white",
+            relief="flat",
+            bd=0,
+            cursor="hand2",
+            padx=25,
+            pady=12,
+            command=self._save_keys
+        )
+        save_btn.pack(side="left", padx=(15, 0))
+
+        save_btn.bind("<Enter>", lambda e: save_btn.config(bg="#357ABD"))
+        save_btn.bind("<Leave>", lambda e: save_btn.config(bg=ACCENT))
+
         # Spacer
         tk.Frame(btn_frame, bg=BG).pack(side="left", expand=True)
-        
-        # OK button - STEP 2: Confirm keys and send
+
+        # OK button
         ok_btn = tk.Button(
             btn_frame,
-            text="🔐 Encrypt & Send Message Now",
+            text="✓ Confirm Keys",
             font=("Segoe UI", 10, "bold"),
-            bg="#27AE60",  # Green for final action
+            bg="#27AE60",  # Green for confirmation
             fg="white",
             relief="flat",
             cursor="hand2",
@@ -589,6 +569,7 @@ class KeysInputDialog(tk.Toplevel):
             bd=0
         )
         ok_btn.pack(side="right")
+
         
         def ok_hover(e):
             ok_btn.config(bg="#229954")
@@ -635,6 +616,32 @@ class KeysInputDialog(tk.Toplevel):
         self.result = None
         self.destroy()
 
+    def _save_keys(self):
+        keys = {}
+        for algo, entry in self.key_entries.items():
+            value = entry.get().strip()
+            if not value:
+                messagebox.showerror("Error", f"Please enter a key for {algo.upper()} before saving")
+                return
+            keys[algo] = value
+
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".json",
+            filetypes=[("JSON files", "*.json")],
+            title="Save Encryption Keys"
+        )
+        if not file_path:
+            return
+
+        try:
+            import json
+            with open(file_path, "w", encoding="utf-8") as f:
+                json.dump(keys, f, indent=4)
+            messagebox.showinfo("Success", f"Keys saved to {file_path}")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to save keys: {str(e)}")
+
+
 # ---------- App ----------
 class CryptoApp(tk.Tk):
     def __init__(self):
@@ -648,6 +655,10 @@ class CryptoApp(tk.Tk):
         
         self.current_user = None
         self.current_screen = None
+        
+        # Store encryption configuration
+        self.encryption_config = None
+        self.encryption_keys = None
         
         self._setup_style()
         self.show_login()
@@ -676,7 +687,7 @@ class CryptoApp(tk.Tk):
             
             conn.close()
         except Exception as e:
-            print(f"❌ Error ensuring admin: {e}")
+            print(f"Error ensuring admin: {e}")
 
     def _setup_style(self):
         """Configure ttk styles"""
@@ -721,7 +732,7 @@ class CryptoApp(tk.Tk):
         def create_admin_button():
             admin_btn = tk.Button(
                 self,  # Directly on root window
-                text="⚙️ Admin",
+                text="Admin",
                 font=("Segoe UI", 10, "bold"),
                 bg=ADMIN_ACCENT,
                 fg="white",
@@ -833,7 +844,7 @@ class CryptoApp(tk.Tk):
         """Hidden admin panel for user management"""
         admin_window = tk.Toplevel(self)
         admin_window.title("Admin Panel")
-        admin_window.geometry("700x600")
+        admin_window.geometry("900x1200")
         admin_window.configure(bg=BG)
         admin_window.transient(self)
         
@@ -882,9 +893,9 @@ class CryptoApp(tk.Tk):
         
         tk.Label(auth_content, text="Password:", font=FONT_MAIN, bg=CARD, fg=TEXT_PRIMARY).pack(anchor="w", pady=(0, 5))
         admin_pass = ModernEntry(auth_content, width=40, show="●")
-        admin_pass.pack(fill="x", ipady=8)
+        admin_pass.pack(fill="x", ipady=8, pady=(0, 15))
         
-        # User list (initially disabled)
+        # === User list (initially hidden / disabled) ===
         users_frame = tk.Frame(content, bg=CARD, highlightbackground=BORDER, highlightthickness=1)
         users_frame.pack(fill="both", expand=True)
         
@@ -906,12 +917,152 @@ class CryptoApp(tk.Tk):
         tree.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
         
-        tree.config(state="disabled")
+        tree["selectmode"] = "none"
         
         # Buttons
         btn_frame = tk.Frame(users_frame, bg=CARD)
         btn_frame.pack(fill="x", padx=40, pady=(0, 40))
         
+        delete_btn = ModernButton(btn_frame, text="Delete User", bg_color=ADMIN_ACCENT, hover_bg="#C0392B", command=lambda: delete_user(), state="disabled")
+        delete_btn.pack(side="left", padx=(0, 10))
+        
+        reset_btn = ModernButton(btn_frame, text="Reset Password", command=lambda: reset_password(), state="disabled")
+        reset_btn.pack(side="left")
+
+        # Buttons (Add, Edit, Delete, Reset)
+        btn_frame = tk.Frame(users_frame, bg=CARD)
+        btn_frame.pack(fill="x", padx=40, pady=(0, 20))
+
+        add_btn = ModernButton(btn_frame, text="Add User", command=lambda: add_user())
+        add_btn.pack(side="left", padx=(0, 10))
+
+        edit_btn = ModernButton(btn_frame, text="Edit User", command=lambda: edit_user(), state="disabled")
+        edit_btn.pack(side="left", padx=(0, 10))
+
+        delete_btn = ModernButton(btn_frame, text="Delete User", bg_color=ADMIN_ACCENT, hover_bg="#C0392B", command=lambda: delete_user(), state="disabled")
+        delete_btn.pack(side="left", padx=(0, 10))
+
+        reset_btn = ModernButton(btn_frame, text="Reset Password", command=lambda: reset_password(), state="disabled")
+        reset_btn.pack(side="left")
+
+        # Enable edit/delete/reset depending on selection and prevent admin modification
+        def on_tree_select(event=None):
+            sel = tree.selection()
+            if not sel:
+                edit_btn.config(state="disabled")
+                delete_btn.config(state="disabled")
+                reset_btn.config(state="disabled")
+                return
+
+            item = tree.item(sel[0])["values"]
+            if not item:
+                edit_btn.config(state="disabled")
+                delete_btn.config(state="disabled")
+                reset_btn.config(state="disabled")
+                return
+
+            uid, username, is_admin_flag = item[0], item[1], item[2]
+            # Disable destructive actions on default admin user
+            if username == "admin":
+                edit_btn.config(state="disabled")
+                delete_btn.config(state="disabled")
+                reset_btn.config(state="disabled")
+            else:
+                edit_btn.config(state="normal")
+                delete_btn.config(state="normal")
+                reset_btn.config(state="normal")
+
+        tree.bind("<<TreeviewSelect>>", on_tree_select)
+
+        # ---------------- Helper functions ----------------
+        def add_user():
+            # Ask for username and password
+            username = simpledialog.askstring("Add User", "Enter new username:", parent=admin_window)
+            if not username:
+                return
+            username = username.strip()
+            if not username:
+                messagebox.showerror("Error", "Username cannot be empty")
+                return
+
+            password = simpledialog.askstring("Add User", "Enter password for user:", show="●", parent=admin_window)
+            if not password:
+                return
+            password = password.strip()
+            if len(password) < 4:
+                messagebox.showerror("Error", "Password must be at least 4 characters")
+                return
+
+            # Use existing create_user util
+            try:
+                success = create_user(username, password, is_admin=0)
+                if success:
+                    messagebox.showinfo("Success", f"User '{username}' created")
+                    # reload table
+                    authenticate_and_load()
+                else:
+                    messagebox.showerror("Error", "Username already exists")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to create user: {e}")
+
+        def edit_user():
+            sel = tree.selection()
+            if not sel:
+                messagebox.showerror("Error", "Please select a user to edit")
+                return
+
+            item = tree.item(sel[0])["values"]
+            uid = item[0]
+            current_username = item[1]
+
+            if current_username == "admin":
+                messagebox.showerror("Error", "Default admin cannot be edited here")
+                return
+
+            # Ask new username (pre-filled) and optionally new password
+            new_username = simpledialog.askstring("Edit User", "Enter new username:", initialvalue=current_username, parent=admin_window)
+            if not new_username:
+                return
+            new_username = new_username.strip()
+            if not new_username:
+                messagebox.showerror("Error", "Username cannot be empty")
+                return
+
+            new_password = simpledialog.askstring("Edit User", "Enter new password (leave blank to keep current):", show="●", parent=admin_window)
+            try:
+                conn = get_connection()
+                c = conn.cursor()
+
+                # If username changed, check uniqueness
+                if new_username != current_username:
+                    c.execute("SELECT id FROM users WHERE username=?", (new_username,))
+                    if c.fetchone():
+                        messagebox.showerror("Error", "Username already taken")
+                        conn.close()
+                        return
+                    c.execute("UPDATE users SET username=? WHERE id=?", (new_username, uid))
+
+                # If password provided, hash and update
+                if new_password:
+                    if len(new_password) < 4:
+                        messagebox.showerror("Error", "Password must be at least 4 characters")
+                        conn.close()
+                        return
+                    from crypto.hashing import hash_password
+                    salt, hashed = hash_password(new_password)
+                    c.execute("UPDATE users SET password_hash=?, salt=? WHERE id=?", (hashed, salt, uid))
+
+                conn.commit()
+                conn.close()
+                messagebox.showinfo("Success", "User updated successfully")
+                authenticate_and_load()
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to update user: {e}")
+
+        # delete_user and reset_password already present in your code, they will be used as-is.
+
+
+        # === Define helper functions BELOW the widgets ===
         def authenticate_and_load():
             username = admin_user.get().strip()
             password = admin_pass.get().strip()
@@ -926,8 +1077,8 @@ class CryptoApp(tk.Tk):
                 messagebox.showerror("Access Denied", "Invalid credentials or insufficient privileges")
                 return
             
-            # Load users
-            tree.config(state="normal")
+            # Enable table selection and load data
+            tree["selectmode"] = "browse"
             tree.delete(*tree.get_children())
             
             conn = get_connection()
@@ -998,17 +1149,20 @@ class CryptoApp(tk.Tk):
             conn.close()
             
             messagebox.showinfo("Success", f"Password reset for '{username}'")
-        
-        auth_btn = ModernButton(auth_content, text="Authenticate", bg_color=ADMIN_ACCENT, hover_bg="#C0392B", command=authenticate_and_load)
-        auth_btn.pack(pady=(20, 0))
-        
-        delete_btn = ModernButton(btn_frame, text="Delete User", bg_color=ADMIN_ACCENT, hover_bg="#C0392B", command=delete_user, state="disabled")
-        delete_btn.pack(side="left", padx=(0, 10))
-        
-        reset_btn = ModernButton(btn_frame, text="Reset Password", command=reset_password, state="disabled")
-        reset_btn.pack(side="left")
+
+        # === Admin login button ===
+        auth_btn = ModernButton(
+            auth_content,
+            text="🔓 Login as Admin",
+            bg_color=ADMIN_ACCENT,
+            hover_bg="#C0392B",
+            command=authenticate_and_load
+        )
+        auth_btn.pack(pady=(10, 0))
         
         admin_user.focus()
+        admin_pass.bind("<Return>", lambda e: authenticate_and_load())
+
 
     # ---------- REGISTER SCREEN ----------
     def show_register(self):
@@ -1104,6 +1258,10 @@ class CryptoApp(tk.Tk):
     # ---------- DASHBOARD ----------
     def show_dashboard(self):
         self.clear_screen()
+        
+        # Reset encryption config when entering dashboard
+        self.encryption_config = None
+        self.encryption_keys = None
         
         container = tk.Frame(self, bg=BG)
         container.pack(fill="both", expand=True)
@@ -1299,7 +1457,67 @@ class CryptoApp(tk.Tk):
             highlightbackground=BORDER,
             highlightcolor=ACCENT
         )
-        txt_message.pack(fill="both", expand=True, pady=(0, 20))
+        txt_message.pack(fill="both", expand=False, pady=(0, 10))
+        
+        # Configuration status display
+        config_status_frame = tk.Frame(form_content, bg=CARD)
+        config_status_frame.pack(fill="x", pady=(0, 15))
+        
+        config_status_label = tk.Label(
+            config_status_frame,
+            text="⚙️ Configuration: Not configured",
+            font=FONT_MAIN,
+            bg=CARD,
+            fg=TEXT_SECONDARY
+        )
+        config_status_label.pack(anchor="w")
+        
+        def update_config_status():
+            if self.encryption_config and self.encryption_keys:
+                algo_info = " → ".join([a.upper() for a in self.encryption_config])
+                config_status_label.config(
+                    text=f"✓ Configuration: {algo_info} → AES-256",
+                    fg="#27AE60"
+                )
+            else:
+                config_status_label.config(
+                    text="⚙️ Configuration: Not configured",
+                    fg=TEXT_SECONDARY
+                )
+        
+        def configure_encryption():
+            # Step 1: Select algorithms
+            algo_dialog = AlgorithmOrderDialog(self)
+            self.wait_window(algo_dialog)
+            
+            if not algo_dialog.result:
+                return
+            
+            algorithm_order = algo_dialog.result
+            
+            # Step 2: Enter keys
+            keys_dialog = KeysInputDialog(self, algorithm_order)
+            self.wait_window(keys_dialog)
+            
+            if not keys_dialog.result:
+                return
+            
+            keys = keys_dialog.result
+            
+            # Save configuration
+            self.encryption_config = algorithm_order
+            self.encryption_keys = keys
+            
+            # Update status display
+            update_config_status()
+            
+            algo_info = " → ".join([a.upper() for a in algorithm_order])
+            messagebox.showinfo(
+                "Configuration Saved",
+                f"Encryption configured successfully!\n\n"
+                f"Algorithm chain:\n{algo_info} → AES-256\n\n"
+                f"You can now send encrypted messages."
+            )
         
         def do_send():
             to = ent_to.get().strip()
@@ -1309,36 +1527,22 @@ class CryptoApp(tk.Tk):
                 messagebox.showerror("Error", "Please fill in all fields")
                 return
             
+            if not self.encryption_config or not self.encryption_keys:
+                messagebox.showerror("Error", "Please configure encryption first")
+                return
+            
             try:
-                # Step 1: Select algorithms
-                algo_dialog = AlgorithmOrderDialog(self)
-                self.wait_window(algo_dialog)
+                # Multi-algorithm encryption
+                encrypted = multi_encrypt(msg, self.encryption_config, self.encryption_keys)
                 
-                if not algo_dialog.result:
-                    return
-                
-                algorithm_order = algo_dialog.result
-                
-                # Step 2: Enter keys
-                keys_dialog = KeysInputDialog(self, algorithm_order)
-                self.wait_window(keys_dialog)
-                
-                if not keys_dialog.result:
-                    return
-                
-                keys = keys_dialog.result
-                
-                # Step 3: Multi-algorithm encryption
-                encrypted = multi_encrypt(msg, algorithm_order, keys)
-                
-                # Step 4: AES encryption
+                # AES encryption
                 aes_key = generate_key()
                 aes_key_b64 = base64.b64encode(aes_key).decode()
                 cipher = encrypt_aes(encrypted, aes_key)
                 
-                # Step 5: Create metadata
+                # Create metadata
                 metadata = {
-                    'algorithms': algorithm_order,
+                    'algorithms': self.encryption_config,
                     'aes_key': aes_key_b64
                 }
                 metadata_str = json.dumps(metadata)
@@ -1349,12 +1553,12 @@ class CryptoApp(tk.Tk):
                 store_message(self.current_user["username"], to, payload)
                 
                 # Show success with algorithm info
-                algo_info = " → ".join([a.upper() for a in algorithm_order])
+                algo_info = " → ".join([a.upper() for a in self.encryption_config])
                 messagebox.showinfo(
                     "Success", 
                     f"Message encrypted and sent!\n\n"
                     f"Encryption chain:\n{algo_info} → AES-256\n\n"
-                    f"Share your keys securely with the recipient."
+                    f"The recipient will need your encryption keys to decrypt."
                 )
                 
                 ent_to.delete(0, "end")
@@ -1365,7 +1569,24 @@ class CryptoApp(tk.Tk):
                 traceback.print_exc()
                 messagebox.showerror("Error", f"Failed to send message: {str(e)}")
         
-        ModernButton(form_content, text="Configure & Send", command=do_send).pack(anchor="e")
+        # Button frame with TWO SEPARATE BUTTONS
+        btn_frame = tk.Frame(form_content, bg=CARD)
+        btn_frame.pack(anchor="e", fill="x", pady=(15, 0))  # <-- tambahin fill & padding biar muncul
+
+        ModernButton(
+            btn_frame,
+            text="⚙️ Configure Encryption",
+            bg_color="#9B59B6",
+            hover_bg="#8E44AD",
+            command=configure_encryption
+        ).pack(side="left", padx=(0, 10))
+
+        ModernButton(
+            btn_frame,
+            text="📤 Send Message",
+            command=do_send
+        ).pack(side="left")
+
 
     # ---------- INBOX ----------
     def show_inbox(self):
