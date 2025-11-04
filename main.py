@@ -841,128 +841,269 @@ class CryptoApp(tk.Tk):
 
     # ---------- HIDDEN ADMIN PANEL ----------
     def show_admin_panel(self):
-        """Hidden admin panel for user management"""
+        """Hidden admin panel with 2-stage view: login then user CRUD"""
+        import json
         admin_window = tk.Toplevel(self)
         admin_window.title("Admin Panel")
-        admin_window.geometry("900x1200")
+
+        # ✅ Ukuran fleksibel + maximize aktif
+        admin_window.geometry("900x600")
+        admin_window.minsize(700, 500)
+        admin_window.resizable(True, True)
         admin_window.configure(bg=BG)
         admin_window.transient(self)
-        
-        # Header
+
+        # ========== HEADER ==========
         header = tk.Frame(admin_window, bg=ADMIN_ACCENT)
         header.pack(fill="x")
-        
         tk.Label(
             header,
             text="🔧 Administrator Panel",
             font=FONT_HEADER,
             bg=ADMIN_ACCENT,
             fg="white"
-        ).pack(pady=20)
-        
+        ).pack(pady=(15, 0))
         tk.Label(
             header,
             text="User Management System",
             font=FONT_MAIN,
             bg=ADMIN_ACCENT,
             fg="white"
-        ).pack(pady=(0, 20))
-        
-        # Content
-        content = tk.Frame(admin_window, bg=BG)
-        content.pack(fill="both", expand=True, padx=30, pady=30)
-        
-        # Auth section
-        auth_frame = tk.Frame(content, bg=CARD, highlightbackground=BORDER, highlightthickness=1)
-        auth_frame.pack(fill="x", pady=(0, 20))
-        
-        auth_content = tk.Frame(auth_frame, bg=CARD)
-        auth_content.pack(padx=20, pady=20)
-        
+        ).pack(pady=(0, 15))
+
+        # ========== CONTAINER UTAMA ==========
+        container = tk.Frame(admin_window, bg=BG)
+        container.pack(fill="both", expand=True, padx=20, pady=20)
+
+        # --- FRAME LOGIN ADMIN ---
+        login_frame = tk.Frame(container, bg=CARD, highlightbackground=BORDER, highlightthickness=1)
+        login_frame.pack(fill="both", expand=True)
+
         tk.Label(
-            auth_content,
-            text="Admin Authentication Required",
+            login_frame,
+            text="🔐 Admin Authentication Required",
             font=FONT_SUBHEADER,
             bg=CARD,
             fg=TEXT_PRIMARY
-        ).pack(anchor="w", pady=(0, 15))
-        
-        tk.Label(auth_content, text="Username:", font=FONT_MAIN, bg=CARD, fg=TEXT_PRIMARY).pack(anchor="w", pady=(0, 5))
-        admin_user = ModernEntry(auth_content, width=40)
-        admin_user.pack(fill="x", ipady=8, pady=(0, 10))
-        
-        tk.Label(auth_content, text="Password:", font=FONT_MAIN, bg=CARD, fg=TEXT_PRIMARY).pack(anchor="w", pady=(0, 5))
-        admin_pass = ModernEntry(auth_content, width=40, show="●")
-        admin_pass.pack(fill="x", ipady=8, pady=(0, 15))
-        
-        # === User list (initially hidden / disabled) ===
-        users_frame = tk.Frame(content, bg=CARD, highlightbackground=BORDER, highlightthickness=1)
-        users_frame.pack(fill="both", expand=True)
-        
-        tree_container = tk.Frame(users_frame, bg=CARD)
-        tree_container.pack(fill="both", expand=True, padx=20, pady=20)
-        
-        tree = ttk.Treeview(tree_container, columns=("id", "username", "is_admin"), show="headings", height=10)
+        ).pack(pady=(30, 10))
+
+        tk.Label(login_frame, text="Username:", font=FONT_MAIN, bg=CARD, fg=TEXT_PRIMARY).pack()
+        admin_user = ModernEntry(login_frame, width=30)
+        admin_user.pack(ipady=8, pady=(0, 10))
+
+        tk.Label(login_frame, text="Password:", font=FONT_MAIN, bg=CARD, fg=TEXT_PRIMARY).pack()
+        admin_pass = ModernEntry(login_frame, width=30, show="●")
+        admin_pass.pack(ipady=8, pady=(0, 15))
+
+        login_btn = ModernButton(
+            login_frame,
+            text="Login as Admin",
+            bg_color=ADMIN_ACCENT,
+            hover_bg="#C0392B",
+            command=lambda: authenticate_admin()
+        )
+        login_btn.pack(pady=(10, 20))
+
+        # --- FRAME CRUD USER (AWALNYA TERSEMBUNYI) ---
+        crud_frame = tk.Frame(container, bg=CARD, highlightbackground=BORDER, highlightthickness=1)
+
+        # Subheader
+        tk.Label(
+            crud_frame,
+            text="👥 Manage Users",
+            font=FONT_SUBHEADER,
+            bg=CARD,
+            fg=TEXT_PRIMARY
+        ).pack(anchor="w", padx=20, pady=(15, 5))
+
+        # Table container (scrollable)
+        table_container = tk.Frame(crud_frame, bg=CARD)
+        table_container.pack(fill="both", expand=True, padx=20, pady=(5, 10))
+
+        tree = ttk.Treeview(
+            table_container,
+            columns=("id", "username", "is_admin"),
+            show="headings",
+            height=6
+        )
         tree.heading("id", text="ID")
         tree.heading("username", text="Username")
         tree.heading("is_admin", text="Admin")
-        
-        tree.column("id", width=50)
-        tree.column("username", width=200)
-        tree.column("is_admin", width=100)
-        
-        scrollbar = ttk.Scrollbar(tree_container, orient="vertical", command=tree.yview)
-        tree.configure(yscrollcommand=scrollbar.set)
-        
+
+        tree.column("id", width=40, anchor="center")
+        tree.column("username", width=180)
+        tree.column("is_admin", width=80, anchor="center")
+
+        scroll_y = ttk.Scrollbar(table_container, orient="vertical", command=tree.yview)
+        scroll_x = ttk.Scrollbar(table_container, orient="horizontal", command=tree.xview)
+        tree.configure(yscrollcommand=scroll_y.set, xscrollcommand=scroll_x.set)
+
         tree.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
-        
-        tree["selectmode"] = "none"
-        
-        # Buttons
-        btn_frame = tk.Frame(users_frame, bg=CARD)
-        btn_frame.pack(fill="x", padx=40, pady=(0, 40))
-        
-        delete_btn = ModernButton(btn_frame, text="Delete User", bg_color=ADMIN_ACCENT, hover_bg="#C0392B", command=lambda: delete_user(), state="disabled")
-        delete_btn.pack(side="left", padx=(0, 10))
-        
-        reset_btn = ModernButton(btn_frame, text="Reset Password", command=lambda: reset_password(), state="disabled")
-        reset_btn.pack(side="left")
+        scroll_y.pack(side="right", fill="y")
+        scroll_x.pack(side="bottom", fill="x")
 
-        # Buttons (Add, Edit, Delete, Reset)
-        btn_frame = tk.Frame(users_frame, bg=CARD)
-        btn_frame.pack(fill="x", padx=40, pady=(0, 20))
+        # CRUD buttons
+        btn_frame = tk.Frame(crud_frame, bg=CARD)
+        btn_frame.pack(fill="x", padx=20, pady=(0, 20))
 
-        add_btn = ModernButton(btn_frame, text="Add User", command=lambda: add_user())
-        add_btn.pack(side="left", padx=(0, 10))
+        add_btn = ModernButton(btn_frame, text="➕ Add User", command=lambda: add_user())
+        edit_btn = ModernButton(btn_frame, text="✏️ Edit User", state="disabled", command=lambda: edit_user())
+        delete_btn = ModernButton(btn_frame, text="🗑️ Delete User", bg_color=ADMIN_ACCENT, hover_bg="#C0392B", state="disabled", command=lambda: delete_user())
+        reset_btn = ModernButton(btn_frame, text="🔄 Reset Password", state="disabled", command=lambda: reset_password())
 
-        edit_btn = ModernButton(btn_frame, text="Edit User", command=lambda: edit_user(), state="disabled")
-        edit_btn.pack(side="left", padx=(0, 10))
+        add_btn.pack(side="left", padx=5)
+        edit_btn.pack(side="left", padx=5)
+        delete_btn.pack(side="left", padx=5)
+        reset_btn.pack(side="left", padx=5)
 
-        delete_btn = ModernButton(btn_frame, text="Delete User", bg_color=ADMIN_ACCENT, hover_bg="#C0392B", command=lambda: delete_user(), state="disabled")
-        delete_btn.pack(side="left", padx=(0, 10))
+        # ========== FUNGSI-FUNGSI INTERNAL ==========
 
-        reset_btn = ModernButton(btn_frame, text="Reset Password", command=lambda: reset_password(), state="disabled")
-        reset_btn.pack(side="left")
+        def authenticate_admin():
+            username = admin_user.get().strip()
+            password = admin_pass.get().strip()
 
-        # Enable edit/delete/reset depending on selection and prevent admin modification
-        def on_tree_select(event=None):
+            if not username or not password:
+                messagebox.showerror("Error", "Please enter credentials")
+                return
+
+            result = login(username, password)
+            if not result or not result.get('is_admin'):
+                messagebox.showerror("Access Denied", "Invalid credentials or insufficient privileges")
+                return
+
+            messagebox.showinfo("Success", "Authenticated successfully")
+
+            # ganti tampilan
+            login_frame.pack_forget()
+            crud_frame.pack(fill="both", expand=True)
+
+            load_users()
+
+        def load_users():
+            tree.delete(*tree.get_children())
+            conn = get_connection()
+            cur = conn.cursor()
+            cur.execute("SELECT id, username, is_admin FROM users ORDER BY id")
+            rows = cur.fetchall()
+            conn.close()
+
+            for r in rows:
+                admin_status = "Yes" if r[2] else "No"
+                tree.insert("", "end", values=(r[0], r[1], admin_status))
+
+        def add_user():
+            username = simpledialog.askstring("Add User", "Enter new username:", parent=admin_window)
+            if not username: return
+            username = username.strip()
+            if not username:
+                messagebox.showerror("Error", "Username cannot be empty")
+                return
+
+            password = simpledialog.askstring("Add User", f"Enter password for '{username}':", show="●", parent=admin_window)
+            if not password: return
+            if len(password) < 4:
+                messagebox.showerror("Error", "Password must be at least 4 characters")
+                return
+
+            try:
+                success = create_user(username, password, is_admin=0)
+                if success:
+                    messagebox.showinfo("Success", f"User '{username}' added")
+                    load_users()
+                else:
+                    messagebox.showerror("Error", "Username already exists")
+            except Exception as e:
+                messagebox.showerror("Error", str(e))
+
+        def edit_user():
+            sel = tree.selection()
+            if not sel:
+                messagebox.showerror("Error", "Select a user to edit")
+                return
+            item = tree.item(sel[0])["values"]
+            uid, username = item[0], item[1]
+            if username == "admin":
+                messagebox.showerror("Error", "Default admin cannot be edited")
+                return
+
+            new_username = simpledialog.askstring("Edit User", "Enter new username:", initialvalue=username, parent=admin_window)
+            if not new_username: return
+            new_password = simpledialog.askstring("Edit User", "Enter new password (leave blank to keep current):", show="●", parent=admin_window)
+
+            conn = get_connection()
+            c = conn.cursor()
+
+            # update username
+            if new_username != username:
+                c.execute("SELECT id FROM users WHERE username=?", (new_username,))
+                if c.fetchone():
+                    messagebox.showerror("Error", "Username already exists")
+                    conn.close()
+                    return
+                c.execute("UPDATE users SET username=? WHERE id=?", (new_username, uid))
+
+            # update password
+            if new_password:
+                from crypto.hashing import hash_password
+                salt, hashed = hash_password(new_password)
+                c.execute("UPDATE users SET password_hash=?, salt=? WHERE id=?", (hashed, salt, uid))
+
+            conn.commit()
+            conn.close()
+            messagebox.showinfo("Success", "User updated successfully")
+            load_users()
+
+        def delete_user():
+            sel = tree.selection()
+            if not sel:
+                messagebox.showerror("Error", "Select a user to delete")
+                return
+            item = tree.item(sel[0])["values"]
+            uid, username = item[0], item[1]
+            if username == "admin":
+                messagebox.showerror("Error", "Cannot delete default admin")
+                return
+            if not messagebox.askyesno("Confirm", f"Delete user '{username}'? This cannot be undone."):
+                return
+            conn = get_connection()
+            cur = conn.cursor()
+            cur.execute("DELETE FROM users WHERE id=?", (uid,))
+            conn.commit()
+            conn.close()
+            load_users()
+            messagebox.showinfo("Success", f"User '{username}' deleted")
+
+        def reset_password():
+            sel = tree.selection()
+            if not sel:
+                messagebox.showerror("Error", "Select a user to reset password")
+                return
+            item = tree.item(sel[0])["values"]
+            uid, username = item[0], item[1]
+            npw = simpledialog.askstring("Reset Password", f"Enter new password for {username}:", show="●")
+            if not npw: return
+            if len(npw) < 4:
+                messagebox.showerror("Error", "Password must be at least 4 characters")
+                return
+            from crypto.hashing import hash_password
+            salt, hashed = hash_password(npw)
+            conn = get_connection()
+            cur = conn.cursor()
+            cur.execute("UPDATE users SET password_hash=?, salt=? WHERE id=?", (hashed, salt, uid))
+            conn.commit()
+            conn.close()
+            messagebox.showinfo("Success", f"Password reset for '{username}'")
+
+        # aktifkan tombol CRUD hanya saat user dipilih
+        def on_select(event):
             sel = tree.selection()
             if not sel:
                 edit_btn.config(state="disabled")
                 delete_btn.config(state="disabled")
                 reset_btn.config(state="disabled")
                 return
-
             item = tree.item(sel[0])["values"]
-            if not item:
-                edit_btn.config(state="disabled")
-                delete_btn.config(state="disabled")
-                reset_btn.config(state="disabled")
-                return
-
-            uid, username, is_admin_flag = item[0], item[1], item[2]
-            # Disable destructive actions on default admin user
+            username = item[1]
             if username == "admin":
                 edit_btn.config(state="disabled")
                 delete_btn.config(state="disabled")
@@ -972,196 +1113,9 @@ class CryptoApp(tk.Tk):
                 delete_btn.config(state="normal")
                 reset_btn.config(state="normal")
 
-        tree.bind("<<TreeviewSelect>>", on_tree_select)
-
-        # ---------------- Helper functions ----------------
-        def add_user():
-            # Ask for username and password
-            username = simpledialog.askstring("Add User", "Enter new username:", parent=admin_window)
-            if not username:
-                return
-            username = username.strip()
-            if not username:
-                messagebox.showerror("Error", "Username cannot be empty")
-                return
-
-            password = simpledialog.askstring("Add User", "Enter password for user:", show="●", parent=admin_window)
-            if not password:
-                return
-            password = password.strip()
-            if len(password) < 4:
-                messagebox.showerror("Error", "Password must be at least 4 characters")
-                return
-
-            # Use existing create_user util
-            try:
-                success = create_user(username, password, is_admin=0)
-                if success:
-                    messagebox.showinfo("Success", f"User '{username}' created")
-                    # reload table
-                    authenticate_and_load()
-                else:
-                    messagebox.showerror("Error", "Username already exists")
-            except Exception as e:
-                messagebox.showerror("Error", f"Failed to create user: {e}")
-
-        def edit_user():
-            sel = tree.selection()
-            if not sel:
-                messagebox.showerror("Error", "Please select a user to edit")
-                return
-
-            item = tree.item(sel[0])["values"]
-            uid = item[0]
-            current_username = item[1]
-
-            if current_username == "admin":
-                messagebox.showerror("Error", "Default admin cannot be edited here")
-                return
-
-            # Ask new username (pre-filled) and optionally new password
-            new_username = simpledialog.askstring("Edit User", "Enter new username:", initialvalue=current_username, parent=admin_window)
-            if not new_username:
-                return
-            new_username = new_username.strip()
-            if not new_username:
-                messagebox.showerror("Error", "Username cannot be empty")
-                return
-
-            new_password = simpledialog.askstring("Edit User", "Enter new password (leave blank to keep current):", show="●", parent=admin_window)
-            try:
-                conn = get_connection()
-                c = conn.cursor()
-
-                # If username changed, check uniqueness
-                if new_username != current_username:
-                    c.execute("SELECT id FROM users WHERE username=?", (new_username,))
-                    if c.fetchone():
-                        messagebox.showerror("Error", "Username already taken")
-                        conn.close()
-                        return
-                    c.execute("UPDATE users SET username=? WHERE id=?", (new_username, uid))
-
-                # If password provided, hash and update
-                if new_password:
-                    if len(new_password) < 4:
-                        messagebox.showerror("Error", "Password must be at least 4 characters")
-                        conn.close()
-                        return
-                    from crypto.hashing import hash_password
-                    salt, hashed = hash_password(new_password)
-                    c.execute("UPDATE users SET password_hash=?, salt=? WHERE id=?", (hashed, salt, uid))
-
-                conn.commit()
-                conn.close()
-                messagebox.showinfo("Success", "User updated successfully")
-                authenticate_and_load()
-            except Exception as e:
-                messagebox.showerror("Error", f"Failed to update user: {e}")
-
-        # delete_user and reset_password already present in your code, they will be used as-is.
-
-
-        # === Define helper functions BELOW the widgets ===
-        def authenticate_and_load():
-            username = admin_user.get().strip()
-            password = admin_pass.get().strip()
-            
-            if not username or not password:
-                messagebox.showerror("Error", "Please enter credentials")
-                return
-            
-            # Check if admin
-            result = login(username, password)
-            if not result or not result.get('is_admin'):
-                messagebox.showerror("Access Denied", "Invalid credentials or insufficient privileges")
-                return
-            
-            # Enable table selection and load data
-            tree["selectmode"] = "browse"
-            tree.delete(*tree.get_children())
-            
-            conn = get_connection()
-            cur = conn.cursor()
-            cur.execute("SELECT id, username, is_admin FROM users ORDER BY id")
-            rows = cur.fetchall()
-            conn.close()
-            
-            for r in rows:
-                admin_status = "Yes" if r[2] else "No"
-                tree.insert("", "end", values=(r[0], r[1], admin_status))
-            
-            delete_btn.config(state="normal")
-            reset_btn.config(state="normal")
-            messagebox.showinfo("Success", "Authenticated successfully")
-        
-        def delete_user():
-            sel = tree.selection()
-            if not sel:
-                messagebox.showerror("Error", "Please select a user")
-                return
-            
-            item = tree.item(sel[0])["values"]
-            uid = item[0]
-            username = item[1]
-            
-            if username == "admin":
-                messagebox.showerror("Error", "Cannot delete default admin user")
-                return
-            
-            if not messagebox.askyesno("Confirm", f"Delete user '{username}'?\n\nThis action cannot be undone."):
-                return
-            
-            conn = get_connection()
-            c = conn.cursor()
-            c.execute("DELETE FROM users WHERE id=?", (uid,))
-            conn.commit()
-            conn.close()
-            
-            messagebox.showinfo("Success", f"User '{username}' deleted successfully")
-            authenticate_and_load()
-        
-        def reset_password():
-            sel = tree.selection()
-            if not sel:
-                messagebox.showerror("Error", "Please select a user")
-                return
-            
-            item = tree.item(sel[0])["values"]
-            uid = item[0]
-            username = item[1]
-            
-            npw = simpledialog.askstring("Reset Password", f"Enter new password for {username}:", show="●")
-            if not npw:
-                return
-            
-            if len(npw) < 4:
-                messagebox.showerror("Error", "Password must be at least 4 characters")
-                return
-            
-            from crypto.hashing import hash_password
-            salt, hashed = hash_password(npw)
-            
-            conn = get_connection()
-            c = conn.cursor()
-            c.execute("UPDATE users SET password_hash=?, salt=? WHERE id=?", (hashed, salt, uid))
-            conn.commit()
-            conn.close()
-            
-            messagebox.showinfo("Success", f"Password reset for '{username}'")
-
-        # === Admin login button ===
-        auth_btn = ModernButton(
-            auth_content,
-            text="🔓 Login as Admin",
-            bg_color=ADMIN_ACCENT,
-            hover_bg="#C0392B",
-            command=authenticate_and_load
-        )
-        auth_btn.pack(pady=(10, 0))
-        
+        tree.bind("<<TreeviewSelect>>", on_select)
         admin_user.focus()
-        admin_pass.bind("<Return>", lambda e: authenticate_and_load())
+        admin_pass.bind("<Return>", lambda e: authenticate_admin())
 
 
     # ---------- REGISTER SCREEN ----------
