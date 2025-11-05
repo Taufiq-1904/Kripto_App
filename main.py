@@ -13,7 +13,7 @@ from messages import store_message, fetch_messages, fetch_all_messages, delete_m
 from stego_utils import encode_message, decode_message
 from crypto.vigenere import vigenere_encrypt, vigenere_decrypt
 from crypto.aes import generate_key, encrypt_aes, decrypt_aes
-from face_auth import authenticate_face, register_admin_face, authenticate_face, show_face_panel
+from face_auth import authenticate_face, register_admin_face, show_face_panel
 
 
 
@@ -208,8 +208,8 @@ class AlgorithmOrderDialog(tk.Toplevel):
     def __init__(self, parent):
         super().__init__(parent)
         self.title("Select Encryption Order")
-        self.geometry("600x750")
-        self.minsize(600, 750)
+        self.geometry("600x850")
+        self.minsize(600, 850)
         self.configure(bg=BG)
         self.resizable(False, False)
         
@@ -242,6 +242,15 @@ class AlgorithmOrderDialog(tk.Toplevel):
             font=FONT_MAIN,
             bg=CARD,
             fg=TEXT_SECONDARY
+        ).pack(pady=(0, SPACE_XS))
+        
+        # Requirement notice
+        tk.Label(
+            header_frame,
+            text="⚠️ Minimum 2 algorithms required for super encryption",
+            font=("Segoe UI", 9, "bold"),
+            bg=CARD,
+            fg="#E67E22"
         ).pack(pady=(0, SPACE_XL))
         
         # Main content with consistent spacing
@@ -354,6 +363,16 @@ class AlgorithmOrderDialog(tk.Toplevel):
         )
         self.down_btn.pack(side="left")
         
+        # Selection counter
+        self.selection_counter = tk.Label(
+            content,
+            text="Selected: 0 algorithms (Minimum: 2)",
+            font=("Segoe UI", 10, "bold"),
+            bg=BG,
+            fg="#E74C3C"
+        )
+        self.selection_counter.pack(anchor="w", pady=(10, 5))
+        
         # Info
         tk.Label(
             content,
@@ -363,7 +382,7 @@ class AlgorithmOrderDialog(tk.Toplevel):
             fg=TEXT_SECONDARY,
             wraplength=450,
             justify="left"
-        ).pack(anchor="w", pady=10)
+        ).pack(anchor="w", pady=(5, 10))
         
         # Buttons - TWO BUTTONS: Cancel and Save Configuration
         btn_frame = tk.Frame(self, bg=BG)
@@ -425,6 +444,24 @@ class AlgorithmOrderDialog(tk.Toplevel):
         self.order_listbox.delete(0, tk.END)
         for i, algo in enumerate(self.selected_order, 1):
             self.order_listbox.insert(tk.END, f"{i}. {algo.upper()}")
+        
+        # Update selection counter
+        count = len(self.selected_order)
+        if count >= 2:
+            self.selection_counter.config(
+                text=f"✅ Selected: {count} algorithms (Minimum: 2)",
+                fg="#27AE60"
+            )
+        elif count == 1:
+            self.selection_counter.config(
+                text=f"⚠️ Selected: {count} algorithm (Need 1 more!)",
+                fg="#E67E22"
+            )
+        else:
+            self.selection_counter.config(
+                text=f"❌ Selected: {count} algorithms (Minimum: 2)",
+                fg="#E74C3C"
+            )
     
     def _update_move_buttons(self):
         """Enable/disable move buttons based on selection"""
@@ -460,6 +497,17 @@ class AlgorithmOrderDialog(tk.Toplevel):
     def _on_ok(self):
         if not self.selected_order:
             messagebox.showerror("Error", "Please select at least one algorithm")
+            return
+        
+        # Validate: Super encryption requires minimum 2 algorithms
+        if len(self.selected_order) < 2:
+            messagebox.showerror(
+                "Invalid Configuration",
+                "❌ Super Encryption requires at least 2 algorithms!\n\n"
+                "You have selected: 1 algorithm\n"
+                "Required: 2 or more algorithms\n\n"
+                "Please select at least one more algorithm to continue."
+            )
             return
         
         self.result = self.selected_order
@@ -805,7 +853,7 @@ class CryptoApp(tk.Tk):
         
         # Center card with better size
         card = tk.Frame(main_frame, bg=CARD, highlightbackground=BORDER, highlightthickness=1)
-        card.place(relx=0.5, rely=0.5, anchor="center", width=480, height=550)
+        card.place(relx=0.5, rely=0.5, anchor="center", width=480, height=650)
         
         # Header with improved spacing
         header_frame = tk.Frame(card, bg=CARD)
@@ -1022,7 +1070,7 @@ class CryptoApp(tk.Tk):
 
         # CRUD buttons
         btn_frame = tk.Frame(crud_frame, bg=CARD)
-        btn_frame.pack(fill="x", padx=20, pady=(0, 20))
+        btn_frame.pack(fill="x", padx=20, pady=(0, 10))
 
         add_btn = ModernButton(btn_frame, text="➕ Add User", command=lambda: add_user())
         edit_btn = ModernButton(btn_frame, text="✏️ Edit User", state="disabled", command=lambda: edit_user())
@@ -1033,6 +1081,88 @@ class CryptoApp(tk.Tk):
         edit_btn.pack(side="left", padx=5)
         delete_btn.pack(side="left", padx=5)
         reset_btn.pack(side="left", padx=5)
+        
+        # Face Recognition Management Section
+        face_frame = tk.Frame(crud_frame, bg=CARD)
+        face_frame.pack(fill="x", padx=20, pady=(0, 20))
+        
+        tk.Label(
+            face_frame,
+            text="🧠 Face Recognition Management",
+            font=("Segoe UI", 10, "bold"),
+            bg=CARD,
+            fg=TEXT_PRIMARY
+        ).pack(anchor="w", pady=(0, 10))
+        
+        face_btn_frame = tk.Frame(face_frame, bg=CARD)
+        face_btn_frame.pack(fill="x")
+        
+        def edit_face_recognition():
+            result = messagebox.askyesno(
+                "Re-register Face",
+                "This will replace your current face authentication data.\n\n"
+                "You will need to capture your face again.\n\n"
+                "Continue?"
+            )
+            
+            if result:
+                if register_admin_face():
+                    messagebox.showinfo(
+                        "Success",
+                        "✅ Face authentication updated successfully!\n\n"
+                        "You can now use the new face data to login."
+                    )
+        
+        def delete_face_recognition():
+            result = messagebox.askyesno(
+                "Delete Face Data",
+                "⚠️ WARNING: This will permanently delete your face authentication data!\n\n"
+                "You will need to re-register to use face login again.\n\n"
+                "Are you sure?"
+            )
+            
+            if result:
+                import os
+                from face_auth import ADMIN_FACE_MODEL, ADMIN_FACE_IMAGES
+                
+                deleted = False
+                if os.path.exists(ADMIN_FACE_MODEL):
+                    os.remove(ADMIN_FACE_MODEL)
+                    deleted = True
+                
+                if os.path.exists(ADMIN_FACE_IMAGES):
+                    os.remove(ADMIN_FACE_IMAGES)
+                    deleted = True
+                
+                if deleted:
+                    messagebox.showinfo(
+                        "Deleted",
+                        "✅ Face authentication data has been deleted.\n\n"
+                        "Use 'Re-register Face' to set up face login again."
+                    )
+                else:
+                    messagebox.showwarning(
+                        "Not Found",
+                        "No face authentication data found."
+                    )
+        
+        reregister_btn = ModernButton(
+            face_btn_frame,
+            text="🔄 Re-register Face",
+            bg_color="#27AE60",
+            hover_bg="#229954",
+            command=edit_face_recognition
+        )
+        reregister_btn.pack(side="left", padx=(0, 10))
+        
+        delete_face_btn = ModernButton(
+            face_btn_frame,
+            text="🗑️ Delete Face Data",
+            bg_color="#E74C3C",
+            hover_bg="#C0392B",
+            command=delete_face_recognition
+        )
+        delete_face_btn.pack(side="left")
 
         # ========== FUNGSI-FUNGSI INTERNAL ==========
 
@@ -1542,9 +1672,29 @@ class CryptoApp(tk.Tk):
         form_content.pack(fill="both", expand=True, padx=30, pady=30)
         
         # Recipient
-        tk.Label(form_content, text="Recipient Username", font=FONT_MAIN, bg=CARD, fg=TEXT_PRIMARY).pack(anchor="w", pady=(0, 5))
-        ent_to = ModernEntry(form_content)
-        ent_to.pack(fill="x", ipady=8, pady=(0, 20))
+        recipient_frame = tk.Frame(form_content, bg=CARD)
+        recipient_frame.pack(fill="x", pady=(0, 20))
+        
+        tk.Label(recipient_frame, text="Recipient Username", font=FONT_MAIN, bg=CARD, fg=TEXT_PRIMARY).pack(anchor="w", pady=(0, 5))
+        ent_to = ModernEntry(recipient_frame)
+        ent_to.pack(fill="x", ipady=8, pady=(0, 5))
+        
+        # Show available users hint
+        conn = get_connection()
+        c = conn.cursor()
+        c.execute("SELECT username FROM users WHERE username != ?", (self.current_user["username"],))
+        available_users = [row[0] for row in c.fetchall()]
+        conn.close()
+        
+        if available_users:
+            hint_text = f"💡 Available users: {', '.join(available_users)}"
+            tk.Label(
+                recipient_frame, 
+                text=hint_text, 
+                font=("Segoe UI", 9), 
+                bg=CARD, 
+                fg="#7F8C8D"
+            ).pack(anchor="w")
         
         # Message
         tk.Label(form_content, text="Message", font=FONT_MAIN, bg=CARD, fg=TEXT_PRIMARY).pack(anchor="w", pady=(0, 5))
@@ -1629,6 +1779,21 @@ class CryptoApp(tk.Tk):
             
             if not to or not msg:
                 messagebox.showerror("Error", "Please fill in all fields")
+                return
+            
+            # Validate recipient username exists in database
+            conn = get_connection()
+            c = conn.cursor()
+            c.execute("SELECT id, username FROM users WHERE username=?", (to,))
+            recipient = c.fetchone()
+            conn.close()
+            
+            if not recipient:
+                messagebox.showerror(
+                    "User Not Found", 
+                    f"Username '{to}' does not exist!\n\n"
+                    f"Please check the username and try again."
+                )
                 return
             
             if not self.encryption_config or not self.encryption_keys:

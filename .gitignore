@@ -36,6 +36,11 @@ db_master.key
 *.pem
 *.crt
 
+# Face Recognition Data - Contains biometric data
+face_data/
+*.pkl
+*.yml
+
 # IDE
 .vscode/
 .idea/

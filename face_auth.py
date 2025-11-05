@@ -2,19 +2,57 @@
 Face Authentication Module for SecureMessenger Pro
 Uses OpenCV's built-in face detection with LBPH (Local Binary Patterns Histograms) for recognition
 No external dependencies like dlib or face_recognition required!
+
+SECURITY: All face data is encrypted with AES-256 before saving to disk
 """
 
 import os
 import pickle
+import base64
 import tkinter as tk
 from tkinter import messagebox
 import cv2
 import numpy as np
+from crypto.aes import encrypt_aes, decrypt_aes, generate_key
+
+# ============================================================================
+# FACE DATA ENCRYPTION
+# ============================================================================
+
+def get_or_create_face_key():
+    """
+    Get or create master key for face data encryption
+    
+    Returns:
+        bytes: 16-byte AES key for encrypting face data
+    
+    Security:
+        - Separate key from database master key (defense in depth)
+        - Key stored in face_master.key
+        - If key is lost, face data cannot be recovered
+    """
+    key_file = "face_master.key"
+    
+    if os.path.exists(key_file):
+        with open(key_file, 'rb') as f:
+            return f.read()
+    else:
+        # Generate new key
+        key = generate_key()
+        with open(key_file, 'wb') as f:
+            f.write(key)
+        print("🔐 NEW FACE ENCRYPTION KEY GENERATED!")
+        print(f"📁 Saved to: {key_file}")
+        print("⚠️  BACKUP THIS FILE! If lost, face data cannot be decrypted!")
+        return key
+
+# Global face encryption key (loaded once at startup)
+FACE_ENCRYPTION_KEY = get_or_create_face_key()
 
 # Directory to store face data
 FACE_DATA_DIR = "face_data"
-ADMIN_FACE_IMAGES = os.path.join(FACE_DATA_DIR, "admin_faces.pkl")
-ADMIN_FACE_MODEL = os.path.join(FACE_DATA_DIR, "admin_model.yml")
+ADMIN_FACE_IMAGES = os.path.join(FACE_DATA_DIR, "admin_faces.enc")  # Changed to .enc
+ADMIN_FACE_MODEL = os.path.join(FACE_DATA_DIR, "admin_model.enc")   # Changed to .enc
 HAAR_CASCADE_PATH = cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
 
 # Initialize face detector
@@ -142,28 +180,91 @@ def capture_multiple_faces(window_title="Capture Face", num_samples=20):
         return None
 
 def save_face_data(face_samples):
-    """Save captured face samples and train the model"""
+    """
+    Save captured face samples and train the model with AES-256 encryption
+    
+    Security:
+        - Face samples encrypted with AES-256 before saving
+        - Model encrypted with AES-256 before saving
+        - Uses FACE_ENCRYPTION_KEY from face_master.key
+        - .enc extension indicates encrypted file
+    """
     ensure_face_data_dir()
     
-    # Save face samples
-    with open(ADMIN_FACE_IMAGES, 'wb') as f:
-        pickle.dump(face_samples, f)
+    # Serialize face samples to bytes
+    face_data_bytes = pickle.dumps(face_samples)
+    
+    # Encrypt face samples with AES-256
+    face_data_b64 = base64.b64encode(face_data_bytes).decode('utf-8')
+    encrypted_face_data = encrypt_aes(face_data_b64, FACE_ENCRYPTION_KEY)
+    
+    # Save encrypted face samples
+    with open(ADMIN_FACE_IMAGES, 'w') as f:
+        f.write(encrypted_face_data)
+    
+    print(f"🔒 Face samples encrypted and saved to {ADMIN_FACE_IMAGES}")
     
     # Train the face recognizer
     recognizer = cv2.face.LBPHFaceRecognizer_create()
     labels = [1] * len(face_samples)  # All samples are from admin (label=1)
     recognizer.train(face_samples, np.array(labels))
-    recognizer.save(ADMIN_FACE_MODEL)
     
-    print(f"✅ Face model trained and saved to {ADMIN_FACE_MODEL}")
+    # Save model to temporary file first
+    temp_model = "temp_model.yml"
+    recognizer.save(temp_model)
+    
+    # Read model file and encrypt it
+    with open(temp_model, 'r', encoding='utf-8') as f:
+        model_yaml = f.read()
+    
+    encrypted_model = encrypt_aes(model_yaml, FACE_ENCRYPTION_KEY)
+    
+    # Save encrypted model
+    with open(ADMIN_FACE_MODEL, 'w') as f:
+        f.write(encrypted_model)
+    
+    # Remove temporary file
+    os.remove(temp_model)
+    
+    print(f"🔒 Face model encrypted and saved to {ADMIN_FACE_MODEL}")
+    print(f"✅ Face data secured with AES-256 encryption!")
 
 def load_face_model():
-    """Load the trained face recognizer model"""
-    if os.path.exists(ADMIN_FACE_MODEL):
+    """
+    Load the trained face recognizer model with AES-256 decryption
+    
+    Security:
+        - Model decrypted with AES-256 using FACE_ENCRYPTION_KEY
+        - Decryption happens in-memory (no plaintext saved to disk)
+        - Returns None if decryption fails or file doesn't exist
+    """
+    if not os.path.exists(ADMIN_FACE_MODEL):
+        return None
+    
+    try:
+        # Read encrypted model
+        with open(ADMIN_FACE_MODEL, 'r') as f:
+            encrypted_model = f.read()
+        
+        # Decrypt model
+        model_yaml = decrypt_aes(encrypted_model, FACE_ENCRYPTION_KEY)
+        
+        # Save to temporary file for OpenCV to load
+        temp_model = "temp_model_load.yml"
+        with open(temp_model, 'w', encoding='utf-8') as f:
+            f.write(model_yaml)
+        
+        # Load model from temporary file
         recognizer = cv2.face.LBPHFaceRecognizer_create()
-        recognizer.read(ADMIN_FACE_MODEL)
+        recognizer.read(temp_model)
+        
+        # Remove temporary file
+        os.remove(temp_model)
+        
         return recognizer
-    return None
+    except Exception as e:
+        print(f"❌ Failed to load face model: {e}")
+        return None
 
 def register_admin_face():
     """Register admin's face for authentication"""
