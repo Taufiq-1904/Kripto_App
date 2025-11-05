@@ -17,19 +17,58 @@ from face_auth import authenticate_face, register_admin_face, authenticate_face,
 
 
 
-# ---------- UI CONSTANTS - Clean White Minimalist ----------
-BG = "#FFFFFF"
-CARD = "#F8F9FA"
-BORDER = "#E9ECEF"
-ACCENT = "#4A90E2"
-TEXT_PRIMARY = "#212529"
-TEXT_SECONDARY = "#6C757D"
-HOVER = "#E3F2FD"
-ADMIN_ACCENT = "#E74C3C"  # Red for admin features
-FONT_MAIN = ("Segoe UI", 10)
-FONT_HEADER = ("Segoe UI", 18, "bold")
-FONT_SUBHEADER = ("Segoe UI", 12, "bold")
-UI_PAD = 20
+# ---------- UI CONSTANTS - Modern Professional Theme ----------
+# Background Colors
+BG = "#F5F7FA"              # Light gray-blue background
+CARD = "#FFFFFF"            # Pure white cards
+BORDER = "#E1E8ED"          # Soft border color
+SIDEBAR_BG = "#2C3E50"      # Dark blue-gray sidebar
+SIDEBAR_ACTIVE = "#34495E"  # Active menu item
+
+# Accent Colors
+ACCENT = "#3498DB"          # Primary blue
+ACCENT_HOVER = "#2980B9"    # Darker blue on hover
+SUCCESS = "#27AE60"         # Green for success
+DANGER = "#E74C3C"          # Red for danger
+WARNING = "#F39C12"         # Orange for warnings
+ADMIN_ACCENT = "#E74C3C"    # Red for admin features
+
+# Text Colors
+TEXT_PRIMARY = "#2C3E50"    # Dark blue-gray
+TEXT_SECONDARY = "#7F8C8D"  # Medium gray
+TEXT_LIGHT = "#ECF0F1"      # Light text for dark backgrounds
+TEXT_MUTED = "#95A5A6"      # Muted gray
+
+# Other Colors
+HOVER = "#EBF5FB"           # Light blue hover
+INPUT_BG = "#FFFFFF"        # White input background
+INPUT_FOCUS = "#3498DB"     # Blue border on focus
+
+# Typography - Better hierarchy
+FONT_FAMILY = "Segoe UI"
+FONT_DISPLAY = (FONT_FAMILY, 24, "bold")    # Extra large headers
+FONT_HEADER = (FONT_FAMILY, 18, "bold")     # Page headers
+FONT_SUBHEADER = (FONT_FAMILY, 14, "bold")  # Section headers
+FONT_MAIN = (FONT_FAMILY, 10)               # Body text
+FONT_SMALL = (FONT_FAMILY, 9)               # Small text
+FONT_BUTTON = (FONT_FAMILY, 10, "bold")     # Button text
+
+# Spacing System - Consistent padding/margins
+SPACE_XS = 5    # Extra small spacing
+SPACE_SM = 10   # Small spacing
+SPACE_MD = 15   # Medium spacing
+SPACE_LG = 20   # Large spacing
+SPACE_XL = 30   # Extra large spacing
+SPACE_XXL = 40  # Extra extra large spacing
+
+# Component Sizes
+UI_PAD = SPACE_LG           # Standard padding (20px)
+CARD_PAD = SPACE_XL         # Card padding (30px)
+BTN_PAD_X = 25              # Button horizontal padding
+BTN_PAD_Y = 10              # Button vertical padding
+INPUT_HEIGHT = 12           # Input field height (ipady)
+BORDER_WIDTH = 1            # Standard border width
+BORDER_RADIUS = 4           # Border radius (for future CSS)
 
 # ---------- ENCRYPTION ALGORITHMS ----------
 def caesar_encrypt(text: str, shift: int) -> str:
@@ -118,23 +157,25 @@ def multi_decrypt(ciphertext: str, algorithm_order: list, keys: dict) -> str:
 
 # ---------- Custom Widgets ----------
 class ModernButton(tk.Button):
-    """Clean white-themed button with hover effect"""
+    """Modern button with better spacing and hover effect"""
     def __init__(self, parent, **kwargs):
         bg_color = kwargs.pop('bg_color', ACCENT)
-        hover_bg = kwargs.pop('hover_bg', "#357ABD" if bg_color == ACCENT else "#C0392B")  # <-- pindah ke atas
+        hover_bg = kwargs.pop('hover_bg', ACCENT_HOVER if bg_color == ACCENT else DANGER)
+        
         super().__init__(
             parent,
             bg=bg_color,
             fg="white",
-            font=FONT_MAIN,
+            font=FONT_BUTTON,
             relief="flat",
             cursor="hand2",
-            padx=20,
-            pady=10,
+            padx=BTN_PAD_X,
+            pady=BTN_PAD_Y,
+            bd=0,
             **kwargs
         )
         self.default_bg = bg_color
-        self.hover_bg = hover_bg  # <-- pakai variabel yang udah di-pop
+        self.hover_bg = hover_bg
         self.bind("<Enter>", self._on_hover)
         self.bind("<Leave>", self._on_leave)
     
@@ -146,18 +187,19 @@ class ModernButton(tk.Button):
 
 
 class ModernEntry(tk.Entry):
-    """Clean entry field with border"""
+    """Modern entry field with better spacing and focus effect"""
     def __init__(self, parent, **kwargs):
         super().__init__(
             parent,
             font=FONT_MAIN,
-            bg="white",
+            bg=INPUT_BG,
             fg=TEXT_PRIMARY,
             relief="solid",
-            bd=1,
-            highlightthickness=1,
+            bd=BORDER_WIDTH,
+            highlightthickness=2,
             highlightbackground=BORDER,
-            highlightcolor=ACCENT,
+            highlightcolor=INPUT_FOCUS,
+            insertbackground=TEXT_PRIMARY,
             **kwargs
         )
 
@@ -182,9 +224,9 @@ class AlgorithmOrderDialog(tk.Toplevel):
         self._create_widgets()
         
     def _create_widgets(self):
-        # Header
+        # Header with better spacing
         header_frame = tk.Frame(self, bg=CARD, highlightbackground=BORDER, highlightthickness=1)
-        header_frame.pack(fill="x", padx=20, pady=20)
+        header_frame.pack(fill="x", padx=SPACE_XL, pady=SPACE_XL)
         
         tk.Label(
             header_frame,
@@ -192,7 +234,7 @@ class AlgorithmOrderDialog(tk.Toplevel):
             font=FONT_HEADER,
             bg=CARD,
             fg=TEXT_PRIMARY
-        ).pack(pady=20)
+        ).pack(pady=(SPACE_XL, SPACE_SM))
         
         tk.Label(
             header_frame,
@@ -200,23 +242,23 @@ class AlgorithmOrderDialog(tk.Toplevel):
             font=FONT_MAIN,
             bg=CARD,
             fg=TEXT_SECONDARY
-        ).pack(pady=(0, 20))
+        ).pack(pady=(0, SPACE_XL))
         
-        # Main content
+        # Main content with consistent spacing
         content = tk.Frame(self, bg=BG)
-        content.pack(fill="both", expand=False, padx=20, pady=10)
+        content.pack(fill="both", expand=False, padx=SPACE_XL, pady=SPACE_SM)
         
-        # Available algorithms
+        # Available algorithms section
         tk.Label(
             content,
             text="Available Algorithms:",
             font=FONT_SUBHEADER,
             bg=BG,
             fg=TEXT_PRIMARY
-        ).pack(anchor="w", pady=(10, 5))
+        ).pack(anchor="w", pady=(SPACE_MD, SPACE_XS))
         
         algo_frame = tk.Frame(content, bg=CARD, highlightbackground=BORDER, highlightthickness=1)
-        algo_frame.pack(fill="x", pady=10)
+        algo_frame.pack(fill="x", pady=SPACE_SM)
         
         self.algo_vars = {}
         for algo in self.available_algos:
@@ -253,17 +295,17 @@ class AlgorithmOrderDialog(tk.Toplevel):
                 fg=TEXT_SECONDARY
             ).pack(side="left", padx=(10, 0))
         
-        # Order selection
+        # Order selection section with better spacing
         tk.Label(
             content,
             text="Encryption Order:",
             font=FONT_SUBHEADER,
             bg=BG,
             fg=TEXT_PRIMARY
-        ).pack(anchor="w", pady=(20, 5))
+        ).pack(anchor="w", pady=(SPACE_LG, SPACE_XS))
         
         order_frame = tk.Frame(content, bg=CARD, highlightbackground=BORDER, highlightthickness=1)
-        order_frame.pack(fill="x", pady=10)
+        order_frame.pack(fill="x", pady=SPACE_SM)
         
         self.order_listbox = tk.Listbox(
             order_frame,
@@ -274,7 +316,7 @@ class AlgorithmOrderDialog(tk.Toplevel):
             height=3,
             selectmode=tk.SINGLE
         )
-        self.order_listbox.pack(fill="x", padx=20, pady=20)
+        self.order_listbox.pack(fill="x", padx=SPACE_LG, pady=SPACE_LG)
         
         # Order control buttons
         order_btn_frame = tk.Frame(order_frame, bg=CARD)
@@ -761,18 +803,18 @@ class CryptoApp(tk.Tk):
         # Create button after window updates
         self.after(100, create_admin_button)
         
-        # Center card
+        # Center card with better size
         card = tk.Frame(main_frame, bg=CARD, highlightbackground=BORDER, highlightthickness=1)
-        card.place(relx=0.5, rely=0.5, anchor="center", width=450, height=500)
+        card.place(relx=0.5, rely=0.5, anchor="center", width=480, height=550)
         
-        # Header
+        # Header with improved spacing
         header_frame = tk.Frame(card, bg=CARD)
-        header_frame.pack(pady=(40, 10))
+        header_frame.pack(pady=(SPACE_XXL + SPACE_SM, SPACE_MD))
         
         tk.Label(
             header_frame,
             text="🔐",
-            font=("Segoe UI", 48),
+            font=("Segoe UI", 56),
             bg=CARD,
             fg=ACCENT
         ).pack()
@@ -780,10 +822,10 @@ class CryptoApp(tk.Tk):
         tk.Label(
             header_frame,
             text="SecureMessenger Pro",
-            font=FONT_HEADER,
+            font=FONT_DISPLAY,
             bg=CARD,
             fg=TEXT_PRIMARY
-        ).pack(pady=(10, 5))
+        ).pack(pady=(SPACE_MD, SPACE_XS))
         
         tk.Label(
             header_frame,
@@ -793,21 +835,33 @@ class CryptoApp(tk.Tk):
             fg=TEXT_SECONDARY
         ).pack()
         
-        # Form
+        # Form with better spacing
         form_frame = tk.Frame(card, bg=CARD)
-        form_frame.pack(pady=0, padx=80, fill="x")
+        form_frame.pack(pady=SPACE_LG, padx=SPACE_XXL + SPACE_LG, fill="x")
         
-        tk.Label(form_frame, text="Username", font=FONT_MAIN, bg=CARD, fg=TEXT_PRIMARY).pack(anchor="w", pady=(0, 5))
+        tk.Label(
+            form_frame, 
+            text="Username", 
+            font=FONT_MAIN, 
+            bg=CARD, 
+            fg=TEXT_PRIMARY
+        ).pack(anchor="w", pady=(0, SPACE_XS))
         ent_user = ModernEntry(form_frame, width=40)
-        ent_user.pack(fill="x", ipady=8)
+        ent_user.pack(fill="x", ipady=INPUT_HEIGHT)
         
-        tk.Label(form_frame, text="Password", font=FONT_MAIN, bg=CARD, fg=TEXT_PRIMARY).pack(anchor="w", pady=(20, 5))
+        tk.Label(
+            form_frame, 
+            text="Password", 
+            font=FONT_MAIN, 
+            bg=CARD, 
+            fg=TEXT_PRIMARY
+        ).pack(anchor="w", pady=(SPACE_LG, SPACE_XS))
         ent_pass = ModernEntry(form_frame, width=40, show="●")
-        ent_pass.pack(fill="x", ipady=8)
+        ent_pass.pack(fill="x", ipady=INPUT_HEIGHT)
         
-        # Buttons
+        # Buttons with better spacing
         btn_frame = tk.Frame(card, bg=CARD)
-        btn_frame.pack(pady=20, padx=50, fill="x")
+        btn_frame.pack(pady=SPACE_XL, padx=SPACE_XXL + SPACE_MD, fill="x")
         
         def do_login():
             username = ent_user.get().strip()
@@ -824,12 +878,12 @@ class CryptoApp(tk.Tk):
             else:
                 messagebox.showerror("Login Failed", "Invalid username or password")
         
-        ModernButton(btn_frame, text="Login", command=do_login).pack(fill="x", pady=(0, 10))
+        ModernButton(btn_frame, text="Login", command=do_login).pack(fill="x", pady=(0, SPACE_MD))
         
         register_btn = tk.Button(
             btn_frame,
             text="Create Account",
-            font=FONT_MAIN,
+            font=FONT_BUTTON,
             bg="white",
             fg=ACCENT,
             relief="solid",
@@ -837,7 +891,17 @@ class CryptoApp(tk.Tk):
             cursor="hand2",
             command=self.show_register
         )
-        register_btn.pack(fill="x", ipady=10)
+        register_btn.pack(fill="x", ipady=INPUT_HEIGHT)
+        
+        # Add hover effect for register button
+        def register_hover(e):
+            register_btn.config(bg=HOVER, fg=ACCENT)
+        
+        def register_leave(e):
+            register_btn.config(bg="white", fg=ACCENT)
+        
+        register_btn.bind("<Enter>", register_hover)
+        register_btn.bind("<Leave>", register_leave)
         
         ent_user.focus()
         ent_pass.bind("<Return>", lambda e: do_login())
@@ -1137,18 +1201,18 @@ class CryptoApp(tk.Tk):
         main_frame.pack(fill="both", expand=True)
         
         card = tk.Frame(main_frame, bg=CARD, highlightbackground=BORDER, highlightthickness=1)
-        card.place(relx=0.5, rely=0.5, anchor="center", width=450, height=550)
+        card.place(relx=0.5, rely=0.5, anchor="center", width=480, height=600)
         
         header_frame = tk.Frame(card, bg=CARD)
-        header_frame.pack(pady=(40, 10))
+        header_frame.pack(pady=(SPACE_XXL, SPACE_MD))
         
         tk.Label(
             header_frame,
             text="Create Account",
-            font=FONT_HEADER,
+            font=FONT_DISPLAY,
             bg=CARD,
             fg=TEXT_PRIMARY
-        ).pack(pady=(10, 5))
+        ).pack(pady=(SPACE_SM, SPACE_XS))
         
         tk.Label(
             header_frame,
@@ -1159,22 +1223,22 @@ class CryptoApp(tk.Tk):
         ).pack()
         
         form_frame = tk.Frame(card, bg=CARD)
-        form_frame.pack(pady=30, padx=50, fill="x")
+        form_frame.pack(pady=SPACE_LG, padx=SPACE_XXL + SPACE_MD, fill="x")
         
-        tk.Label(form_frame, text="Username", font=FONT_MAIN, bg=CARD, fg=TEXT_PRIMARY).pack(anchor="w", pady=(0, 5))
+        tk.Label(form_frame, text="Username", font=FONT_MAIN, bg=CARD, fg=TEXT_PRIMARY).pack(anchor="w", pady=(0, SPACE_XS))
         ent_user = ModernEntry(form_frame, width=40)
-        ent_user.pack(fill="x", ipady=8)
+        ent_user.pack(fill="x", ipady=INPUT_HEIGHT)
         
-        tk.Label(form_frame, text="Password", font=FONT_MAIN, bg=CARD, fg=TEXT_PRIMARY).pack(anchor="w", pady=(20, 5))
+        tk.Label(form_frame, text="Password", font=FONT_MAIN, bg=CARD, fg=TEXT_PRIMARY).pack(anchor="w", pady=(SPACE_LG, SPACE_XS))
         ent_pass = ModernEntry(form_frame, width=40, show="●")
-        ent_pass.pack(fill="x", ipady=8)
+        ent_pass.pack(fill="x", ipady=INPUT_HEIGHT)
         
-        tk.Label(form_frame, text="Confirm Password", font=FONT_MAIN, bg=CARD, fg=TEXT_PRIMARY).pack(anchor="w", pady=(20, 5))
+        tk.Label(form_frame, text="Confirm Password", font=FONT_MAIN, bg=CARD, fg=TEXT_PRIMARY).pack(anchor="w", pady=(SPACE_LG, SPACE_XS))
         ent_confirm = ModernEntry(form_frame, width=40, show="●")
-        ent_confirm.pack(fill="x", ipady=8)
+        ent_confirm.pack(fill="x", ipady=INPUT_HEIGHT)
         
         btn_frame = tk.Frame(card, bg=CARD)
-        btn_frame.pack(pady=20, padx=50, fill="x")
+        btn_frame.pack(pady=SPACE_XL, padx=SPACE_XXL + SPACE_MD, fill="x")
         
         def do_register():
             username = ent_user.get().strip()
@@ -1200,23 +1264,39 @@ class CryptoApp(tk.Tk):
             else:
                 messagebox.showerror("Error", "Username already exists")
         
-        ModernButton(btn_frame, text="Create Account", command=do_register).pack(fill="x", pady=(0, 10))
+        ModernButton(btn_frame, text="Create Account", command=do_register).pack(fill="x", pady=(0, SPACE_LG))
         
         link_frame = tk.Frame(btn_frame, bg=CARD)
         link_frame.pack()
         
-        tk.Label(link_frame, text="Already have an account?", font=FONT_MAIN, bg=CARD, fg=TEXT_SECONDARY).pack(side="left")
+        tk.Label(
+            link_frame, 
+            text="Already have an account?", 
+            font=FONT_MAIN, 
+            bg=CARD, 
+            fg=TEXT_SECONDARY
+        ).pack(side="left")
         
         login_btn = tk.Label(
             link_frame,
             text="Login",
-            font=FONT_MAIN,
+            font=("Segoe UI", 10, "bold"),
             bg=CARD,
             fg=ACCENT,
             cursor="hand2"
         )
-        login_btn.pack(side="left", padx=(5, 0))
+        login_btn.pack(side="left", padx=(SPACE_XS, 0))
         login_btn.bind("<Button-1>", lambda e: self.show_login())
+        
+        # Add hover effect for login link
+        def login_hover(e):
+            login_btn.config(fg=ACCENT_HOVER)
+        
+        def login_leave(e):
+            login_btn.config(fg=ACCENT)
+        
+        login_btn.bind("<Enter>", login_hover)
+        login_btn.bind("<Leave>", login_leave)
         
         ent_user.focus()
 
@@ -1231,55 +1311,110 @@ class CryptoApp(tk.Tk):
         container = tk.Frame(self, bg=BG)
         container.pack(fill="both", expand=True)
         
-        # Sidebar
-        sidebar = tk.Frame(container, bg=CARD, width=250, highlightbackground=BORDER, highlightthickness=1)
+        # Modern Sidebar with dark theme
+        sidebar = tk.Frame(container, bg=SIDEBAR_BG, width=280)
         sidebar.pack(side="left", fill="y")
         sidebar.pack_propagate(False)
         
-        sidebar_header = tk.Frame(sidebar, bg=CARD)
-        sidebar_header.pack(fill="x", pady=20, padx=20)
+        # Sidebar header with icon
+        sidebar_header = tk.Frame(sidebar, bg=SIDEBAR_BG)
+        sidebar_header.pack(fill="x", pady=SPACE_XL, padx=SPACE_XL)
+        
+        # App icon
+        tk.Label(
+            sidebar_header,
+            text="🔐",
+            font=("Segoe UI", 36),
+            bg=SIDEBAR_BG,
+            fg=TEXT_LIGHT
+        ).pack()
         
         tk.Label(
             sidebar_header,
             text="SecureMessenger Pro",
-            font=FONT_SUBHEADER,
-            bg=CARD,
-            fg=ACCENT
-        ).pack(anchor="w")
+            font=("Segoe UI", 14, "bold"),
+            bg=SIDEBAR_BG,
+            fg=TEXT_LIGHT
+        ).pack(pady=(SPACE_SM, SPACE_XS))
         
         tk.Label(
             sidebar_header,
             text=f"@{self.current_user['username']}",
             font=FONT_MAIN,
-            bg=CARD,
-            fg=TEXT_SECONDARY
-        ).pack(anchor="w", pady=(5, 0))
+            bg=SIDEBAR_BG,
+            fg=TEXT_MUTED
+        ).pack()
         
-        # Menu
-        menu_frame = tk.Frame(sidebar, bg=CARD)
-        menu_frame.pack(fill="both", expand=True, pady=10)
+        # Separator line
+        tk.Frame(sidebar, bg="#34495E", height=1).pack(fill="x", padx=SPACE_LG, pady=SPACE_LG)
         
-        self._create_menu_item(menu_frame, "📊 Dashboard", lambda: self.show_dashboard_content())
-        self._create_menu_item(menu_frame, "✉️ Send Message", lambda: self.show_send())
-        self._create_menu_item(menu_frame, "📥 Inbox", lambda: self.show_inbox())
-        self._create_menu_item(menu_frame, "🖼️ Image Stego", lambda: self.show_stego())
-        self._create_menu_item(menu_frame, "📁 File Encrypt", lambda: self.show_file_encrypt())
+        # Menu with better spacing and organization
+        menu_frame = tk.Frame(sidebar, bg=SIDEBAR_BG)
+        menu_frame.pack(fill="both", expand=True, pady=SPACE_SM)
         
-        # Logout
-        logout_frame = tk.Frame(sidebar, bg=CARD)
-        logout_frame.pack(side="bottom", fill="x", pady=20, padx=20)
+        # Main Section
+        tk.Label(
+            menu_frame,
+            text="MAIN",
+            font=("Segoe UI", 9, "bold"),
+            bg=SIDEBAR_BG,
+            fg=TEXT_MUTED,
+            anchor="w"
+        ).pack(anchor="w", padx=SPACE_XL, pady=(SPACE_SM, SPACE_XS))
+        
+        self._create_menu_item(menu_frame, " Dashboard", lambda: self.show_dashboard_content())
+        
+        # Messaging Section
+        tk.Label(
+            menu_frame,
+            text="MESSAGING",
+            font=("Segoe UI", 9, "bold"),
+            bg=SIDEBAR_BG,
+            fg=TEXT_MUTED,
+            anchor="w"
+        ).pack(anchor="w", padx=SPACE_XL, pady=(SPACE_LG, SPACE_XS))
+        
+        self._create_menu_item(menu_frame, " Send Message", lambda: self.show_send())
+        self._create_menu_item(menu_frame, " Inbox", lambda: self.show_inbox())
+        
+        # Security Tools Section
+        tk.Label(
+            menu_frame,
+            text="SECURITY TOOLS",
+            font=("Segoe UI", 9, "bold"),
+            bg=SIDEBAR_BG,
+            fg=TEXT_MUTED,
+            anchor="w"
+        ).pack(anchor="w", padx=SPACE_XL, pady=(SPACE_LG, SPACE_XS))
+        
+        self._create_menu_item(menu_frame, " Image Stego", lambda: self.show_stego())
+        self._create_menu_item(menu_frame, " File Encrypt", lambda: self.show_file_encrypt())
+        
+        # Logout button with modern styling
+        logout_frame = tk.Frame(sidebar, bg=SIDEBAR_BG)
+        logout_frame.pack(side="bottom", fill="x", pady=SPACE_XL, padx=SPACE_XL)
         
         logout_btn = tk.Button(
             logout_frame,
             text="🚪 Logout",
-            font=FONT_MAIN,
-            bg="white",
-            fg=TEXT_PRIMARY,
+            font=FONT_BUTTON,
+            bg=DANGER,
+            fg=TEXT_LIGHT,
             relief="flat",
             cursor="hand2",
-            command=self._do_logout
+            command=self._do_logout,
+            bd=0
         )
-        logout_btn.pack(fill="x", ipady=10)
+        logout_btn.pack(fill="x", ipady=INPUT_HEIGHT)
+        
+        def logout_hover(e):
+            logout_btn.config(bg="#C0392B")
+        
+        def logout_leave(e):
+            logout_btn.config(bg=DANGER)
+        
+        logout_btn.bind("<Enter>", logout_hover)
+        logout_btn.bind("<Leave>", logout_leave)
         
         # Content area
         self.content_area = tk.Frame(container, bg=BG)
@@ -1291,22 +1426,26 @@ class CryptoApp(tk.Tk):
         btn = tk.Button(
             parent,
             text=text,
-            font=FONT_MAIN,
-            bg=CARD,
-            fg=TEXT_PRIMARY,
+            font=("Segoe UI", 11),
+            bg=SIDEBAR_BG,
+            fg=TEXT_LIGHT,
+            activebackground=SIDEBAR_ACTIVE,
+            activeforeground=TEXT_LIGHT,
             relief="flat",
             cursor="hand2",
             anchor="w",
-            padx=20,
+            padx=SPACE_XL,  # Internal padding untuk text
+            pady=SPACE_MD,
+            bd=0,
             command=command
         )
-        btn.pack(fill="x", pady=2)
+        btn.pack(fill="x", pady=SPACE_XS, padx=0)  # No horizontal padding - aligned to edges
         
         def on_hover(e):
-            btn.config(bg=HOVER)
+            btn.config(bg=SIDEBAR_ACTIVE)
         
         def on_leave(e):
-            btn.config(bg=CARD)
+            btn.config(bg=SIDEBAR_BG)
         
         btn.bind("<Enter>", on_hover)
         btn.bind("<Leave>", on_leave)
@@ -1316,12 +1455,12 @@ class CryptoApp(tk.Tk):
             widget.destroy()
         
         content = tk.Frame(self.content_area, bg=BG)
-        content.pack(fill="both", expand=True, padx=30, pady=30)
+        content.pack(fill="both", expand=True, padx=SPACE_XL + SPACE_SM, pady=SPACE_XL + SPACE_SM)
         
         tk.Label(
             content,
             text="Dashboard",
-            font=FONT_HEADER,
+            font=FONT_DISPLAY,
             bg=BG,
             fg=TEXT_PRIMARY
         ).pack(anchor="w", pady=(0, 20))
@@ -1357,10 +1496,10 @@ class CryptoApp(tk.Tk):
             "  • Caesar Cipher - Classic shift encryption\n"
             "  • XOR Encryption - Bitwise operation\n"
             "  • AES-256 - Military-grade encryption\n\n"
-            "⚙️ Customizable Encryption Order:\n"
-            "  Choose your own algorithm combination and order\n\n"
+            "    Customizable Encryption Order:\n"
+            "    Choose your own algorithm combination and order\n\n"
             "🖼️ Steganography - Hide messages in images\n"
-            "📁 File Encryption - Protect sensitive documents\n\n"
+            "📁      File Encryption - Protect sensitive documents\n\n"
             "Use the menu to navigate and start securing your messages!"
         )
         
@@ -1623,7 +1762,10 @@ class CryptoApp(tk.Tk):
                 messagebox.showerror("Error", "Message not found")
                 return
             
-            sender, receiver, payload, ts = row
+            # IMPORTANT: Decrypt database-level encryption first!
+            from db_encryption import decrypt_message_content
+            sender_enc, receiver_enc, payload_enc, ts = row
+            sender, receiver, payload = decrypt_message_content(sender_enc, receiver_enc, payload_enc)
             
             if "::" not in payload:
                 messagebox.showerror("Error", "Invalid message format")
