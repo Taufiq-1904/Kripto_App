@@ -13,6 +13,9 @@ from messages import store_message, fetch_messages, fetch_all_messages, delete_m
 from stego_utils import encode_message, decode_message
 from crypto.vigenere import vigenere_encrypt, vigenere_decrypt
 from crypto.aes import generate_key, encrypt_aes, decrypt_aes
+from face_auth import authenticate_face, register_admin_face, authenticate_face, show_face_panel
+
+
 
 # ---------- UI CONSTANTS - Clean White Minimalist ----------
 BG = "#FFFFFF"
@@ -904,6 +907,17 @@ class CryptoApp(tk.Tk):
         )
         login_btn.pack(pady=(10, 20))
 
+        # Tombol Login with Face (khusus admin)
+        face_btn = ModernButton(
+            login_frame,
+            text="🧠 Login with Face",
+            bg_color="#2980B9",
+            hover_bg="#1A5276",
+            command=lambda: show_face_panel(admin_window, login_frame, crud_frame, load_users)
+        )
+        face_btn.pack(pady=(0, 20))
+
+
         # --- FRAME CRUD USER (AWALNYA TERSEMBUNYI) ---
         crud_frame = tk.Frame(container, bg=CARD, highlightbackground=BORDER, highlightthickness=1)
 
@@ -972,11 +986,8 @@ class CryptoApp(tk.Tk):
                 return
 
             messagebox.showinfo("Success", "Authenticated successfully")
-
-            # ganti tampilan
             login_frame.pack_forget()
             crud_frame.pack(fill="both", expand=True)
-
             load_users()
 
         def load_users():
