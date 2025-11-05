@@ -625,25 +625,6 @@ class KeysInputDialog(tk.Toplevel):
         )
         cancel_btn.pack(side="left")
 
-        # Tombol Save Keys (baru ditambahkan)
-        save_btn = tk.Button(
-            btn_frame,
-            text="💾 Save Keys",
-            font=FONT_MAIN,
-            bg=ACCENT,
-            fg="white",
-            relief="flat",
-            bd=0,
-            cursor="hand2",
-            padx=25,
-            pady=12,
-            command=self._save_keys
-        )
-        save_btn.pack(side="left", padx=(15, 0))
-
-        save_btn.bind("<Enter>", lambda e: save_btn.config(bg="#357ABD"))
-        save_btn.bind("<Leave>", lambda e: save_btn.config(bg=ACCENT))
-
         # Spacer
         tk.Frame(btn_frame, bg=BG).pack(side="left", expand=True)
 
@@ -708,31 +689,6 @@ class KeysInputDialog(tk.Toplevel):
     def _on_cancel(self):
         self.result = None
         self.destroy()
-
-    def _save_keys(self):
-        keys = {}
-        for algo, entry in self.key_entries.items():
-            value = entry.get().strip()
-            if not value:
-                messagebox.showerror("Error", f"Please enter a key for {algo.upper()} before saving")
-                return
-            keys[algo] = value
-
-        file_path = filedialog.asksaveasfilename(
-            defaultextension=".json",
-            filetypes=[("JSON files", "*.json")],
-            title="Save Encryption Keys"
-        )
-        if not file_path:
-            return
-
-        try:
-            import json
-            with open(file_path, "w", encoding="utf-8") as f:
-                json.dump(keys, f, indent=4)
-            messagebox.showinfo("Success", f"Keys saved to {file_path}")
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to save keys: {str(e)}")
 
 
 # ---------- App ----------
